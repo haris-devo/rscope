@@ -1,0 +1,70 @@
+{
+  "name": "rscope",
+  "version": "0.1.0",
+  "description": "See what's inside your React Server Components payload. Finds the props bloating your Next.js App Router pages and fails CI when a route goes over budget.",
+  "type": "module",
+  "bin": {
+    "rscope": "dist/node/cli.js"
+  },
+  "main": "dist/core/index.js",
+  "types": "dist/core/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/core/index.d.ts",
+      "import": "./dist/core/index.js"
+    },
+    "./node": {
+      "types": "./dist/node/index.d.ts",
+      "import": "./dist/node/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "schema.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "workspaces": [
+    "web"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "dev": "tsx src/node/cli.ts",
+    "typecheck": "tsc --noEmit && npm run typecheck -w web",
+    "test": "vitest run",
+    "fixtures": "node scripts/update-fixtures.mjs",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test"
+  },
+  "keywords": [
+    "react-server-components",
+    "rsc",
+    "nextjs",
+    "app-router",
+    "performance",
+    "payload",
+    "flight",
+    "web-vitals",
+    "budget",
+    "ci"
+  ],
+  "author": "Haris Ahmed (https://github.com/haris-devo)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/haris-devo/rscope.git"
+  },
+  "bugs": {
+    "url": "https://github.com/haris-devo/rscope/issues"
+  },
+  "homepage": "https://haris-devo.github.io/rscope/",
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}

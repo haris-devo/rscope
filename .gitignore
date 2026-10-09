@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.tgz
+coverage/
+.DS_Store
+.next/
+# Real build output the tests run against.
+!test/fixtures/*/.next/
