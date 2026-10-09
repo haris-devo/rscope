@@ -44,7 +44,9 @@ jobs:
           npm install --no-audit --no-fund
           if [ "$NEXT" != "pinned" ]; then
             types=$([ "$REACT" = "18" ] && echo 18 || echo latest)
-            npm install --no-audit --no-fund "next@$NEXT" "react@$REACT" "react-dom@$REACT" \
+            # React canaries are prereleases that fall outside Next's peer range; the App Router renders with the
+            # React that Next.js vendors anyway.
+            npm install --no-audit --no-fund --legacy-peer-deps "next@$NEXT" "react@$REACT" "react-dom@$REACT" \
               "@types/react@$types" "@types/react-dom@$types"
           fi
       - name: Build the example
