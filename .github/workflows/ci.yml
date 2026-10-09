@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Test (${{ matrix.os }}, Node ${{ matrix.node }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm run build -w web
+
+  # The test tooling needs Node 22, but the CLI promises Node 20. Run the built CLI there.
+  node-20:
+    name: CLI on Node 20
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --workspaces=false
+      - run: npm run build
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node dist/node/cli.js test/fixtures/next-shop --budget 200kB --detail
+      - name: Over budget exits with 1
+        run: |
+          set +e
+          node dist/node/cli.js test/fixtures/next-shop --json > /dev/null
+          test $? -eq 1
+
+  # Dogfood the action against the committed fixture build.
+  action:
+    name: GitHub Action
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Within budget
+        uses: ./
+        with:
+          path: test/fixtures/next-shop
+          budget: 200kB
+      - name: Over budget
+        id: over
+        continue-on-error: true
+        uses: ./
+        with:
+          path: test/fixtures/next-shop
+      - name: The over-budget run must have failed
+        if: steps.over.outcome != 'failure'
+        run: exit 1

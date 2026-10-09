@@ -1,0 +1,53 @@
+name: rscope
+description: Fail the build when a Next.js App Router route's RSC payload goes over budget, and see which props bloat it.
+author: haris-devo
+branding:
+  icon: bar-chart-2
+  color: orange
+
+inputs:
+  path:
+    description: The .next build directory (or the project that contains it), an .html/.rsc file, or a URL
+    default: .next
+  working-directory:
+    description: Directory to run in, where rscope.config.json lives
+    default: "."
+  budget:
+    description: Payload budget for routes without one in rscope.config.json, e.g. "100kB". Defaults to 128 kB.
+    default: ""
+  args:
+    description: 'Extra arguments, e.g. "--detail --top 10"'
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Check Node.js
+      shell: bash
+      run: |
+        major=$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
+        if [ "$major" -lt 20 ]; then
+          echo "::error::rscope needs Node.js 20 or later. Add actions/setup-node before this step."
+          exit 2
+        fi
+
+    - name: Build rscope
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      # Root package only: the web workspace isn't needed to run the CLI.
+      run: |
+        npm ci --workspaces=false --no-audit --no-fund --loglevel=error
+        npm run build --silent
+
+    - name: rscope
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        RSCOPE_PATH: ${{ inputs.path }}
+        RSCOPE_BUDGET: ${{ inputs.budget }}
+        RSCOPE_ARGS: ${{ inputs.args }}
+      run: |
+        set -- "$RSCOPE_PATH" --summary "$GITHUB_STEP_SUMMARY"
+        if [ -n "$RSCOPE_BUDGET" ]; then set -- "$@" --budget "$RSCOPE_BUDGET"; fi
+        # Word-splitting RSCOPE_ARGS is intended: it holds several flags.
+        node "$GITHUB_ACTION_PATH/dist/node/cli.js" "$@" $RSCOPE_ARGS

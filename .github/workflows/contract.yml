@@ -1,0 +1,53 @@
+name: Next.js contract
+
+# rscope parses a wire format React and Next.js don't document. Build the example app with every supported major,
+# plus the latest and canary releases every week, so a format change shows up here before users hit it.
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  pull_request:
+    paths: ["src/**", "examples/**", "scripts/contract.mjs"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    name: Next.js ${{ matrix.next }} (${{ matrix.bundler }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { next: "14", react: "18", bundler: webpack, flags: "" }
+          - { next: "15", react: "19", bundler: webpack, flags: "" }
+          - { next: pinned, bundler: turbopack, flags: "" }
+          - { next: pinned, bundler: webpack, flags: "--webpack" }
+          - { next: latest, react: latest, bundler: turbopack, flags: "" }
+          - { next: latest, react: latest, bundler: webpack, flags: "--webpack" }
+          - { next: canary, react: canary, bundler: turbopack, flags: "" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --workspaces=false
+      - run: npm run build
+      - name: Install the example
+        working-directory: examples/next-shop
+        env:
+          NEXT: ${{ matrix.next }}
+          REACT: ${{ matrix.react }}
+        run: |
+          npm install --no-audit --no-fund
+          if [ "$NEXT" != "pinned" ]; then
+            types=$([ "$REACT" = "18" ] && echo 18 || echo latest)
+            npm install --no-audit --no-fund "next@$NEXT" "react@$REACT" "react-dom@$REACT" \
+              "@types/react@$types" "@types/react-dom@$types"
+          fi
+      - name: Build the example
+        working-directory: examples/next-shop
+        run: npx next build ${{ matrix.flags }}
+      - run: node scripts/contract.mjs
