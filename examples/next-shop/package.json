@@ -1,0 +1,19 @@
+{
+  "name": "next-shop-example",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.0",
+    "@types/react": "19.2.0",
+    "typescript": "5.9.3"
+  }
+}
