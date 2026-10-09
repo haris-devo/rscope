@@ -1,0 +1,54 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/haris-devo/rscope/main/schema.json",
+  "title": "rscope config",
+  "description": "Budgets for the RSC payload of Next.js App Router routes.",
+  "type": "object",
+  "additionalProperties": false,
+  "definitions": {
+    "size": {
+      "description": "Bytes, or a size such as \"128kB\", \"1.5 MB\" or \"64KiB\". 1 kB = 1000 bytes.",
+      "oneOf": [
+        { "type": "number", "minimum": 0 },
+        { "type": "string", "pattern": "^\\s*\\d+(\\.\\d+)?\\s*([kKmM]i?[bB]?|[bB])?\\s*$" }
+      ]
+    },
+    "budget": {
+      "type": "object",
+      "properties": {
+        "payload": { "$ref": "#/definitions/size", "description": "Raw RSC payload." },
+        "payloadGzip": { "$ref": "#/definitions/size", "description": "Gzipped RSC payload." },
+        "document": { "$ref": "#/definitions/size", "description": "Whole HTML document." },
+        "clientProps": { "$ref": "#/definitions/size", "description": "Props passed to your client components." }
+      }
+    }
+  },
+  "properties": {
+    "$schema": { "type": "string" },
+    "budgets": {
+      "description": "Per-route budgets. The first entry whose pattern matches a route applies.",
+      "type": "array",
+      "items": {
+        "allOf": [
+          { "$ref": "#/definitions/budget" },
+          {
+            "type": "object",
+            "required": ["route"],
+            "properties": {
+              "route": { "type": "string", "description": "Route pattern. * matches one segment, ** any number." }
+            }
+          }
+        ]
+      }
+    },
+    "defaultBudget": {
+      "description": "Budget for routes no entry matches. Defaults to a 128 kB payload; false turns it off.",
+      "oneOf": [{ "$ref": "#/definitions/budget" }, { "const": false }]
+    },
+    "ignore": {
+      "description": "Route patterns to skip.",
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}
