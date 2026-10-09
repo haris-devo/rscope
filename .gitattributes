@@ -1,0 +1,2 @@
+# Build output used as test fixtures must stay byte-for-byte identical on every OS.
+test/fixtures/** -text

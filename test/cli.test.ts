@@ -12,9 +12,12 @@ let output: string[];
 beforeEach(() => {
   output = [];
   vi.spyOn(console, "log").mockImplementation((line: string) => void output.push(line));
+  // Tests assert on plain output, even when CI sets GITHUB_ACTIONS.
+  vi.stubEnv("GITHUB_ACTIONS", "");
 });
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.unstubAllEnvs();
 });
 
 describe("rscope", () => {
@@ -68,6 +71,18 @@ describe("rscope", () => {
     const markdown = readFileSync(summary, "utf8");
     expect(markdown).toContain("❌ 1 of 3 routes over budget.");
     expect(markdown).toContain("| `ProductCard` | 48 | 126.9 kB |");
+  });
+
+  it("keeps JSON clean of GitHub annotations", async () => {
+    vi.stubEnv("GITHUB_ACTIONS", "true");
+    await main([project, "--json"]);
+    expect(() => JSON.parse(output.join("\n"))).not.toThrow();
+  });
+
+  it("annotates routes over budget on GitHub Actions", async () => {
+    vi.stubEnv("GITHUB_ACTIONS", "true");
+    await main([project, "--no-color"]);
+    expect(output.join("\n")).toContain("::error title=rscope: /products over budget::payload is 132.7 kB, budget 128 kB");
   });
 
   it("explains a missing build", async () => {

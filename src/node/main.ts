@@ -122,6 +122,7 @@ export async function main(argv: string[]): Promise<number> {
   }
 
   if (values.summary) await appendFile(values.summary, toMarkdown(kept, violations, { top }));
-  annotate(kept, violations);
+  // Workflow commands go to stdout, so only add them when stdout isn't machine-readable output.
+  if (!values.json && !values.markdown) annotate(kept, violations);
   return violations.length > 0 ? 1 : 0;
 }
